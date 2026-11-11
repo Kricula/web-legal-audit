@@ -34,6 +34,8 @@ Audit se přizpůsobuje typu webu. Prezentační web, e-shop, rezervační syst�
 ## Struktura projektu
 
 ```
+install.sh              # instalátor pro macOS / Linux / WSL
+install.ps1             # instalátor pro Windows PowerShell
 skills/web-legal-audit-cz/
 ├── SKILL.md            # hlavní instrukce a pracovní postup (Agent Skills formát)
 ├── references/         # právní moduly A–H, metodika, zdroje, kontrola živého webu
@@ -50,52 +52,114 @@ Skill odpovídá specifikaci [Agent Skills](https://agentskills.io/specification
 
 ## Instalace
 
-Skill je určen pro AI agenty a prostředí, která podporují formát **Agent Skills** (Claude, Claude Code, Codex, Cursor, GitHub Copilot a další). Po instalaci musí být dostupný celý adresář `web-legal-audit-cz` včetně `SKILL.md`, referencí, skriptů a šablon.
+Skill je určen pro AI agenty a editory, které podporují formát **Agent Skills**. Po instalaci musí být dostupný celý adresář `web-legal-audit-cz` včetně `SKILL.md`, referencí, skriptů a šablon. Vyber jednu z možností:
 
-### Přes skills.sh CLI (doporučeno)
+| Možnost | Kdy použít |
+|---|---|
+| [Instalační skript](#instalační-skript-macos-linux-windows) | jedním příkazem do Claude Code, Cursoru, Codexu, Copilotu, Windsurfu a dalších, bez Node.js |
+| [skills.sh CLI](#přes-skillssh-cli) | máš Node.js a chceš aktualizace přes `npx skills update` |
+| [Aplikace Claude](#claude-web-a-desktopová-aplikace) | Claude na webu nebo v desktopové aplikaci |
+| [Ručně](#ruční-instalace) | vlastní cesta nebo agent, který skript nezná |
 
-Vyžaduje Node.js 22.20 nebo novější. Spusť v adresáři projektu:
+### Podporované editory a agenti
+
+| Editor / agent | `--agent` | Do projektu | Globálně |
+|---|---|---|---|
+| Claude Code | `claude-code` | `.claude/skills/` | `~/.claude/skills/` |
+| Cursor | `cursor` | `.agents/skills/` | `~/.cursor/skills/` |
+| OpenAI Codex | `codex` | `.agents/skills/` | `~/.agents/skills/` |
+| GitHub Copilot | `github-copilot` | `.agents/skills/` | `~/.copilot/skills/` |
+| Gemini CLI | `gemini-cli` | `.agents/skills/` | `~/.gemini/skills/` |
+| Windsurf | `windsurf` | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| OpenCode | `opencode` | `.agents/skills/` | `~/.config/opencode/skills/` |
+| Cline | `cline` | `.agents/skills/` | `~/.agents/skills/` |
+| Roo Code | `roo` | `.roo/skills/` | `~/.roo/skills/` |
+| Kiro CLI | `kiro-cli` | `.kiro/skills/` | `~/.kiro/skills/` |
+| JetBrains Junie | `junie` | `.junie/skills/` | `~/.junie/skills/` |
+| Amp a ostatní | `universal` | `.agents/skills/` | `~/.config/agents/skills/` |
+
+Cesty odpovídají referenční tabulce [skills.sh](https://github.com/vercel-labs/skills/blob/main/docs/agents.md). Instalace „do projektu“ platí jen pro daný repozitář; „globálně“ pro všechny projekty uživatele.
+
+### Instalační skript (macOS, Linux, Windows)
+
+**macOS / Linux / WSL** – bez klonování:
 
 ```bash
-npx skills add Kricula/web-legal-audit
+# interaktivní výběr editorů
+curl -fsSL https://raw.githubusercontent.com/Kricula/web-legal-audit/main/install.sh | bash
+
+# Cursor do aktuálního projektu
+curl -fsSL https://raw.githubusercontent.com/Kricula/web-legal-audit/main/install.sh | bash -s -- --agent cursor
+
+# Claude Code a Codex globálně
+curl -fsSL https://raw.githubusercontent.com/Kricula/web-legal-audit/main/install.sh | bash -s -- --agent claude-code,codex --global
 ```
 
-CLI nabídne výběr agentů, do kterých se skill nainstaluje. Další možnosti:
-
-```bash
-# jen tento skill a jen pro Claude Code
-npx skills add Kricula/web-legal-audit --skill web-legal-audit-cz -a claude-code
-
-# globálně pro všechny projekty
-npx skills add Kricula/web-legal-audit -g
-
-# aktualizace na novou verzi
-npx skills update
-```
-
-### Claude Code – ručně
+Z klonu repozitáře:
 
 ```bash
 git clone https://github.com/Kricula/web-legal-audit.git
-# pro všechny projekty:
-cp -r web-legal-audit/skills/web-legal-audit-cz ~/.claude/skills/
-# nebo jen pro aktuální projekt:
-mkdir -p .claude/skills && cp -r web-legal-audit/skills/web-legal-audit-cz .claude/skills/
+cd web-legal-audit
+./install.sh --agent cursor --project ~/projekty/muj-web   # do konkrétního projektu
+./install.sh --agent all --global                          # všude
+./install.sh --agent claude-code --global --symlink        # symlink – změny v klonu se projeví hned
+```
+
+**Windows (PowerShell)** – bez klonování:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Kricula/web-legal-audit/main/install.ps1))) -Agent cursor
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Kricula/web-legal-audit/main/install.ps1))) -Agent claude-code,codex -Global
+```
+
+Z klonu: `.\install.ps1 -Agent cursor` (případně `powershell -ExecutionPolicy Bypass -File .\install.ps1 -Agent cursor`).
+
+**Volby skriptu**
+
+| `install.sh` | `install.ps1` | Význam |
+|---|---|---|
+| `--agent LIST` | `-Agent LIST` | editory oddělené čárkou nebo `all`; bez volby se zobrazí výběr |
+| `--global` | `-Global` | instalace pro všechny projekty |
+| `--project DIR` | `-Project DIR` | cílový projekt (výchozí: aktuální adresář) |
+| `--symlink` | – | symlink místo kopie (jen z klonu) |
+| `--force` | `-Force` | přepsat existující instalaci bez dotazu |
+| `--uninstall` | `-Uninstall` | odinstalovat |
+| `--zip [SOUBOR]` | `-Zip [-ZipPath SOUBOR]` | vytvořit ZIP pro aplikaci Claude |
+| `--list` | `-List` | vypsat editory a cesty |
+| `--dry-run` | `-DryRun` | jen ukázat, co by se stalo |
+
+Opakované spuštění skript aktualizuje (po potvrzení nebo s `--force`). Editory sdílející stejnou složku (např. Cursor a Codex v `.agents/skills/`) se instalují jen jednou.
+
+### Přes skills.sh CLI
+
+Vyžaduje Node.js 22.20 nebo novější:
+
+```bash
+npx skills add Kricula/web-legal-audit                                        # interaktivní výběr agentů
+npx skills add Kricula/web-legal-audit --skill web-legal-audit-cz -a cursor   # konkrétní agent
+npx skills add Kricula/web-legal-audit -g                                     # globálně
+npx skills update                                                             # aktualizace
 ```
 
 ### Claude (web a desktopová aplikace)
 
-1. Vytvoř ZIP archiv adresáře skillu:
+1. Vytvoř ZIP: `./install.sh --zip` (Windows: `.\install.ps1 -Zip`), nebo bez klonování:
    ```bash
-   git clone https://github.com/Kricula/web-legal-audit.git
-   cd web-legal-audit/skills && zip -r web-legal-audit-cz.zip web-legal-audit-cz -x "*/__pycache__/*"
+   curl -fsSL https://raw.githubusercontent.com/Kricula/web-legal-audit/main/install.sh | bash -s -- --zip
    ```
 2. V Claude otevři **Nastavení → Capabilities → Skills** a nahraj `web-legal-audit-cz.zip`.
 3. Pokud už máš starší verzi se stejným názvem, nejprve ji odeber.
 
-### Ostatní agenti (Codex, Cursor, Copilot…)
+### Ruční instalace
 
-Zkopíruj adresář `skills/web-legal-audit-cz` do adresáře skillů daného agenta, typicky `.agents/skills/` v projektu (Codex), `.github/skills/` (GitHub Copilot) nebo podle dokumentace agenta. Jednodušší je použít `npx skills add`, které cesty zvolí automaticky.
+Zkopíruj adresář `skills/web-legal-audit-cz` do složky skillů svého editoru podle tabulky výše, například:
+
+```bash
+git clone https://github.com/Kricula/web-legal-audit.git
+cp -r web-legal-audit/skills/web-legal-audit-cz ~/.claude/skills/
+```
+
+Po instalaci editor nebo agenta restartuj.
 
 ### Ověření instalace
 
