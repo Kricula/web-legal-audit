@@ -33,11 +33,78 @@ Audit se přizpůsobuje typu webu. Prezentační web, e-shop, rezervační syst�
 
 ## Struktura projektu
 
-Úplná struktura skillu, právní reference, šablony, skripty a testy jsou součástí přiloženého archivu `web-legal-audit-cz-v2.1.0.zip`.
+```
+skills/web-legal-audit-cz/
+├── SKILL.md            # hlavní instrukce a pracovní postup (Agent Skills formát)
+├── references/         # právní moduly A–H, metodika, zdroje, kontrola živého webu
+├── assets/             # šablony: cookie lišta, zásady OÚ, patička, formuláře, VOP, report…
+├── scripts/
+│   └── detect_services.py   # statická inventura služeb třetích stran
+├── tests/              # automatické testy (unittest)
+├── CHANGELOG.md
+├── LICENSE
+└── README.md
+```
+
+Skill odpovídá specifikaci [Agent Skills](https://agentskills.io/specification) a je validní podle referenčního validátoru `skills-ref`.
+
+## Instalace
+
+Skill je určen pro AI agenty a prostředí, která podporují formát **Agent Skills** (Claude, Claude Code, Codex, Cursor, GitHub Copilot a další). Po instalaci musí být dostupný celý adresář `web-legal-audit-cz` včetně `SKILL.md`, referencí, skriptů a šablon.
+
+### Přes skills.sh CLI (doporučeno)
+
+Vyžaduje Node.js 22.20 nebo novější. Spusť v adresáři projektu:
+
+```bash
+npx skills add Kricula/web-legal-audit
+```
+
+CLI nabídne výběr agentů, do kterých se skill nainstaluje. Další možnosti:
+
+```bash
+# jen tento skill a jen pro Claude Code
+npx skills add Kricula/web-legal-audit --skill web-legal-audit-cz -a claude-code
+
+# globálně pro všechny projekty
+npx skills add Kricula/web-legal-audit -g
+
+# aktualizace na novou verzi
+npx skills update
+```
+
+### Claude Code – ručně
+
+```bash
+git clone https://github.com/Kricula/web-legal-audit.git
+# pro všechny projekty:
+cp -r web-legal-audit/skills/web-legal-audit-cz ~/.claude/skills/
+# nebo jen pro aktuální projekt:
+mkdir -p .claude/skills && cp -r web-legal-audit/skills/web-legal-audit-cz .claude/skills/
+```
+
+### Claude (web a desktopová aplikace)
+
+1. Vytvoř ZIP archiv adresáře skillu:
+   ```bash
+   git clone https://github.com/Kricula/web-legal-audit.git
+   cd web-legal-audit/skills && zip -r web-legal-audit-cz.zip web-legal-audit-cz -x "*/__pycache__/*"
+   ```
+2. V Claude otevři **Nastavení → Capabilities → Skills** a nahraj `web-legal-audit-cz.zip`.
+3. Pokud už máš starší verzi se stejným názvem, nejprve ji odeber.
+
+### Ostatní agenti (Codex, Cursor, Copilot…)
+
+Zkopíruj adresář `skills/web-legal-audit-cz` do adresáře skillů daného agenta, typicky `.agents/skills/` v projektu (Codex), `.github/skills/` (GitHub Copilot) nebo podle dokumentace agenta. Jednodušší je použít `npx skills add`, které cesty zvolí automaticky.
+
+### Ověření instalace
+
+```bash
+cd skills/web-legal-audit-cz            # nebo adresář, kam byl skill nainstalován
+python3 -m unittest discover -s tests -v
+```
 
 ## Použití
-
-Skill je určen pro AI agenty a prostředí, která podporují formát **Agent Skills**. Způsob instalace se může lišit podle konkrétního agenta nebo klienta. Po instalaci musí být dostupný celý adresář skillu včetně `SKILL.md`, referencí, skriptů a šablon.
 
 Skill aktivuj například požadavkem:
 
@@ -58,7 +125,7 @@ Pro dílčí kontrolu výslovně uveď požadovanou oblast, například „zkont
 
 ### Statická inventura služeb
 
-Z kořenového adresáře rozbaleného skillu spusť:
+Z adresáře skillu (`skills/web-legal-audit-cz/`) spusť:
 
 ```bash
 python3 scripts/detect_services.py /cesta/k/webu --format md > inventura.md
@@ -76,7 +143,7 @@ Skript prohledává vybrané textové zdrojové soubory a hledá známé vzory s
 
 ### Spuštění testů
 
-Z kořenového adresáře skillu:
+Z adresáře skillu (`skills/web-legal-audit-cz/`):
 
 ```bash
 python3 -m unittest discover -s tests -v
@@ -121,11 +188,11 @@ Právní předpisy, jejich výklad i metodiky se mění. Při každém auditu je
 
 Aktuální verze: **2.1.0**
 
-Podrobnosti o změnách najdeš v souboru `CHANGELOG.md` uvnitř archivu.
+Podrobnosti o změnách najdeš v souboru [`CHANGELOG.md`](skills/web-legal-audit-cz/CHANGELOG.md).
 
 ## Licence
 
-Projekt je distribuován pod licencí MIT. Podrobnosti jsou uvedeny v souboru `LICENSE` uvnitř archivu.
+Projekt je distribuován pod licencí MIT. Podrobnosti jsou uvedeny v souboru [`LICENSE`](LICENSE).
 
 ---
 
