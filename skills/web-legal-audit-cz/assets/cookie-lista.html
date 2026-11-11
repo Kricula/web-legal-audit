@@ -1,0 +1,99 @@
+<!--
+  VÝCHOZÍ UKÁZKA – před nasazením ověř API konkrétní verze CookieConsent a konfiguraci GTM.
+  Google Consent Mode není souhlas ani blokátor skriptů.
+  Instalace: npm i vanilla-cookieconsent  → zkopíruj dist/cookieconsent.umd.js a cookieconsent.css
+  do /assets/cookieconsent/ (hostuj lokálně, ne z CDN).
+  Vlož do <head> PŘED GTM / gtag.
+-->
+
+<!-- 1) Consent Mode v2 – výchozí stav "denied" -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    analytics_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    wait_for_update: 500
+  });
+</script>
+
+<!--
+  DŮLEŽITÉ: Consent Mode default denied sám o sobě nezabrání načtení tagů ani síťovým
+  požadavkům. Tagy a externí embed musí být technicky blokovány do odpovídající volby.
+  U režimu advanced mohou být odesílány omezené pingy; posuď je samostatně.
+-->
+<!-- 2) GTM / gtag zde; v GTM nastav consent checks a ověř každý tag runtime testem. -->
+
+<link rel="stylesheet" href="/assets/cookieconsent/cookieconsent.css">
+<script src="/assets/cookieconsent/cookieconsent.umd.js"></script>
+<script>
+  function ccUpdateConsent() {
+    var a = CookieConsent.acceptedCategory('analytics');
+    var m = CookieConsent.acceptedCategory('marketing');
+    gtag('consent', 'update', {
+      analytics_storage: a ? 'granted' : 'denied',
+      ad_storage: m ? 'granted' : 'denied',
+      ad_user_data: m ? 'granted' : 'denied',
+      ad_personalization: m ? 'granted' : 'denied'
+    });
+    // Sklik: window.sznConsent = m ? 1 : 0;  (předej jako parametr "consent" do retargetingu/konverzí)
+  }
+
+  CookieConsent.run({
+    revision: 1, // zvyš při podstatné změně účelů/poskytovatelů; ověř opětovné vyžádání v konkrétní verzi
+    // 182 dní je příklad konfigurační hodnoty, nikoli zákonná lhůta.
+    cookie: { expiresAfterDays: 180 },
+    guiOptions: {
+      consentModal: { layout: 'box', position: 'bottom left', equalWeightButtons: true },
+      preferencesModal: { layout: 'box', equalWeightButtons: true }
+    },
+    categories: {
+      necessary: { enabled: true, readOnly: true },
+      analytics: {},
+      marketing: {}
+    },
+    onFirstConsent: ccUpdateConsent,
+    onConsent: ccUpdateConsent,
+    onChange: ccUpdateConsent,
+    language: {
+      default: 'cs',
+      translations: {
+        cs: {
+          consentModal: {
+            title: 'Používáme cookies',
+            description: 'Nezbytné cookies zajišťují fungování webu. Analytické a marketingové cookies použijeme jen s vaším souhlasem. Volbu můžete kdykoli změnit v patičce webu. <a href="/cookies">Více informací</a>',
+            acceptAllBtn: 'Přijmout vše',
+            acceptNecessaryBtn: 'Odmítnout vše',
+            showPreferencesBtn: 'Nastavení'
+          },
+          preferencesModal: {
+            title: 'Nastavení cookies',
+            acceptAllBtn: 'Přijmout vše',
+            acceptNecessaryBtn: 'Odmítnout vše',
+            savePreferencesBtn: 'Uložit výběr',
+            closeIconLabel: 'Zavřít',
+            sections: [
+              { title: 'Nezbytné', description: 'Nutné pro provoz webu, např. uložení vaší volby cookies. Nelze vypnout.', linkedCategory: 'necessary' },
+              { title: 'Analytické', description: 'Měření návštěvnosti, abychom mohli web zlepšovat ([Google Analytics]).', linkedCategory: 'analytics' },
+              { title: 'Marketingové', description: 'Měření konverzí a zobrazování relevantní reklamy ([Meta, Sklik]).', linkedCategory: 'marketing' },
+              { title: 'Více informací', description: 'Podrobnosti najdete na stránce <a href="/cookies">Cookies</a> a v <a href="/zasady-ochrany-osobnich-udaju">Zásadách ochrany osobních údajů</a>.' }
+            ]
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<!-- 3) Skripty třetích stran skutečně blokuj do souhlasu; samotný Consent Mode nestačí: -->
+<script type="text/plain" data-category="marketing">
+  /* Meta Pixel / Sklik retargeting / Heureka konverze sem */
+</script>
+
+<!-- 4) Embed s načtením po kliknutí (YouTube, Mapy). Před kliknutím nesmí být vložen aktivní iframe. -->
+<div class="embed-placeholder">
+  <p>Video se načte ze služby YouTube, která může ukládat cookies.</p>
+  <button type="button" onclick="this.parentElement.outerHTML='<iframe src=&quot;https://www.youtube-nocookie.com/embed/[VIDEO_ID]&quot; title=&quot;[Název videa]&quot; allowfullscreen loading=&quot;lazy&quot;></iframe>'">Přehrát video</button>
+</div>
