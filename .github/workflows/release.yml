@@ -66,6 +66,12 @@ jobs:
         run: |
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release upload "${TAG}" web-legal-audit-cz.zip --clobber
+            # Vydání vytvořené ručně na GitHubu: doplnit poznámky, pokud chybí
+            BODY=$(gh release view "${TAG}" --json body --jq '.body')
+            if [ -z "$(printf '%s' "${BODY}" | tr -d '[:space:]')" ]; then
+              gh release edit "${TAG}" --notes-file notes.md
+              echo "Poznámky k vydání doplněny z CHANGELOGu."
+            fi
           else
             gh release create "${TAG}" web-legal-audit-cz.zip \
               --title "Web Legal Audit CZ ${TAG}" --notes-file notes.md --verify-tag
