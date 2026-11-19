@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Testy a validace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Shoda verzí
+        run: python3 tools/set_version.py --check
+
+      - name: Testy skillu
+        working-directory: skills/web-legal-audit-cz
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Testy repozitáře a instalátoru
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Validace skillu (skills-ref, Agent Skills specifikace)
+        run: |
+          pip install --quiet "git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+          skills-ref validate skills/web-legal-audit-cz
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validace pluginu a marketplace (Claude Code)
+        run: npx --yes @anthropic-ai/claude-code plugin validate .
+
+      - name: ShellCheck install.sh
+        run: shellcheck -S warning install.sh
+
+      - name: install.sh --dry-run
+        run: |
+          ./install.sh --agent all --global --dry-run --force
+          ./install.sh --agent cursor --project "$RUNNER_TEMP" --dry-run
+
+      - name: install.ps1 – syntaxe a dry-run
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD/install.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count) { $errors; exit 1 }
+          ./install.ps1 -Agent all -Global -DryRun -Force

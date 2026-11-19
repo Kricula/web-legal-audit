@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existující tag k vydání (např. v2.2.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: GitHub Release se ZIPem
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tag odpovídá verzi skillu
+        run: |
+          python3 tools/set_version.py --check
+          VERSION=$(sed -n 's/^  version: "\(.*\)"$/\1/p' skills/web-legal-audit-cz/SKILL.md)
+          test "v${VERSION}" = "${TAG}" || { echo "Tag ${TAG} neodpovídá verzi ${VERSION}"; exit 1; }
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Testy
+        run: |
+          (cd skills/web-legal-audit-cz && python3 -m unittest discover -s tests)
+          python3 -m unittest discover -s tests
+
+      - name: Sestavení ZIPu pro aplikaci Claude
+        run: ./install.sh --zip "web-legal-audit-cz.zip"
+
+      - name: Poznámky k vydání z CHANGELOGu
+        run: |
+          awk -v v="${VERSION}" '
+            $0 ~ "^## " v "( |$)" {on=1; next}
+            on && /^## / {exit}
+            on {print}
+          ' skills/web-legal-audit-cz/CHANGELOG.md > notes.md
+          cat >> notes.md <<EOF
+
+          ## Instalace
+
+          - **Aplikace Claude (web/desktop):** stáhni \`web-legal-audit-cz.zip\` níže a nahraj ho v Nastavení → Capabilities → Skills.
+          - **Claude Code:** \`/plugin marketplace add Kricula/web-legal-audit\` a \`/plugin install web-legal-audit-cz@web-legal-audit\`
+          - **Ostatní editory:** \`curl -fsSL https://raw.githubusercontent.com/Kricula/web-legal-audit/${TAG}/install.sh | bash -s -- --ref ${TAG}\`
+          EOF
+
+      - name: Vytvoření GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" web-legal-audit-cz.zip --clobber
+          else
+            gh release create "${TAG}" web-legal-audit-cz.zip \
+              --title "Web Legal Audit CZ ${TAG}" --notes-file notes.md --verify-tag
+          fi

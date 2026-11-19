@@ -1,0 +1,13 @@
+{
+  "name": "web-legal-audit-cz",
+  "description": "Právní audit českých webů podle české a EU legislativy – cookies, GDPR, e-shop, přístupnost, AI Act. Projde kód i živý web, navrhne opravy a doplní chybějící texty a souhlasy.",
+  "version": "2.2.0",
+  "author": {
+    "name": "Kricula"
+  },
+  "homepage": "https://github.com/Kricula/web-legal-audit",
+  "repository": "https://github.com/Kricula/web-legal-audit",
+  "license": "MIT",
+  "keywords": ["legal", "gdpr", "cookies", "eshop", "accessibility", "ai-act", "czech", "audit"],
+  "skills": "./skills/"
+}
